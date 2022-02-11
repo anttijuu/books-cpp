@@ -20,17 +20,30 @@
 
 #include <boost/algorithm/string.hpp>
 
-// A structure threads manipulate when doing word calculation
+/**
+ A structure the threads use when doing word calculation.
+ */
 typedef struct thread_struct_t {
+   /**
+    Initializes the thread data struct for processing when threads launch.
+    @param start The start index to the vector slice this thread will process.
+    @param end The end index to the vector slice this thread will process.
+    @param rawWords All the words of the book in a vector.
+    @param toIgnore The words not counted.
+    */
    thread_struct_t(int start, int end,
                    const std::vector<std::wstring> & rawWords,
                    const std::vector<std::wstring> & toIgnore)
    : startIndex(start), endIndex(end), rawWords(rawWords), toIgnore(toIgnore) {
       // Empty
    }
+   /** The start index to the all words vector this thread will process. */
    const int startIndex;
+   /** The end index to the all words vector this thread will process. */
    const int endIndex;
+   /** The count of words in the vector slice this thread processes. */
    int wordCount;
+   /** The count of words ignored while the thread processed the words. */
    int ignoredWordCount;
    const std::vector<std::wstring> & rawWords;
    const std::vector<std::wstring> & toIgnore;
@@ -106,43 +119,43 @@ int main(int argc, const char * argv[]) {
    bookFile.close();
 
    // Prepare the threads
-   enum { NUM_THREADS = 8 };
-   int sliceSize = wordArray.size() / NUM_THREADS;
-   int lastSliceSize = sliceSize + wordArray.size() % NUM_THREADS;
-   // Thread data is placed in this vector
-   thread_struct * threadStructs[NUM_THREADS];
-   for (int counter = 0; counter < NUM_THREADS; counter++) {
+   enum { NUMBER_OF_THREADS = 8 };
+   int sliceSize = wordArray.size() / NUMBER_OF_THREADS;
+   int lastSliceSize = sliceSize + wordArray.size() % NUMBER_OF_THREADS;
+   // Thread data is placed in this array.
+   thread_struct * threadStructs[NUMBER_OF_THREADS];
+   for (int counter = 0; counter < NUMBER_OF_THREADS; counter++) {
       int startIndex = counter;
       int endIndex = std::min(counter + sliceSize - 1, (int)wordArray.size() - 1);
-      if (counter == NUM_THREADS - 1) {
+      if (counter == NUMBER_OF_THREADS - 1) {
          endIndex = counter + lastSliceSize - 1;
       }
       threadStructs[counter] = new thread_struct(startIndex, endIndex, wordArray, wordsToIgnore);
    }
 
-   // Launch the threads and put them into the array
-   std::thread threads[NUM_THREADS];
-   for (int counter = 0; counter < NUM_THREADS; counter++) {
+   // Launch the threads and keep them in the array.
+   std::thread threads[NUMBER_OF_THREADS];
+   for (int counter = 0; counter < NUMBER_OF_THREADS; counter++) {
       threads[counter] = std::thread(run, std::ref(*threadStructs[counter]));
    }
 
-   // Wait for the threads to finish
-   for (int counter = 0; counter < NUM_THREADS; counter++) {
+   // Wait for the threads to finish.
+   for (int counter = 0; counter < NUMBER_OF_THREADS; counter++) {
       threads[counter].join();
    }
 
-   // merge thread results to wordCount and total counters
+   // Merge thread results from the thread structs to wordCount and total counters.
    int wordsTotal = 0;
    int ignoredWordsTotal = 0;
 
-   for (int counter = 0; counter < NUM_THREADS; counter++) {
+   for (int counter = 0; counter < NUMBER_OF_THREADS; counter++) {
       for (const auto wordAndCount : threadStructs[counter]->threadWordCounts) {
          wordCounts[wordAndCount.first] += wordAndCount.second;
          wordsTotal += threadStructs[counter]->wordCount;
          ignoredWordsTotal += threadStructs[counter]->ignoredWordCount;
       }
    }
-   for (int counter = 0; counter < NUM_THREADS; counter++) {
+   for (int counter = 0; counter < NUMBER_OF_THREADS; counter++) {
       delete threadStructs[counter];
    }
 
@@ -154,7 +167,7 @@ int main(int argc, const char * argv[]) {
                      return std::make_pair(p.second, p.first);
                   });
 
-   // Print
+   // Print the results of top words with counts.
    int counter = 0;
    for (const auto & element : result) {
       if (counter++ == topListSize) {
@@ -163,6 +176,7 @@ int main(int argc, const char * argv[]) {
       std::wcout << std::setw(4) << counter << L". " << std::left << std::setw(20) << element.second << L" " << std::right << std::setw(6) << element.first << std::endl;
    }
 
+   // Stop measuring time and print out the time performance.
    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
    std::chrono::milliseconds timeValue = std::chrono::duration_cast<std::chrono::milliseconds>(now-started);
    std::wcout << L"Processed the book in " << timeValue.count() << L" ms." << std::endl;
