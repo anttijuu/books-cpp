@@ -34,7 +34,7 @@ typedef struct thread_struct_t {
    thread_struct_t(int start, int end,
                    const std::vector<std::wstring> & rawWords,
                    const std::vector<std::wstring> & toIgnore)
-   : startIndex(start), endIndex(end), rawWords(rawWords), toIgnore(toIgnore) {
+   : startIndex(start), endIndex(end), rawWords(rawWords), toIgnore(toIgnore), wordCount(0), ignoredWordCount(0) {
       // Empty
    }
    /** The start index to the all words vector this thread will process. */
@@ -42,9 +42,9 @@ typedef struct thread_struct_t {
    /** The end index to the all words vector this thread will process. */
    const int endIndex;
    /** The count of words in the vector slice this thread processes. */
-   int wordCount;
+   long wordCount;
    /** The count of words ignored while the thread processed the words. */
-   int ignoredWordCount;
+   long ignoredWordCount;
    const std::vector<std::wstring> & rawWords;
    const std::vector<std::wstring> & toIgnore;
    std::map<std::wstring,int> threadWordCounts;
@@ -124,13 +124,14 @@ int main(int argc, const char * argv[]) {
    int lastSliceSize = sliceSize + wordArray.size() % NUMBER_OF_THREADS;
    // Thread data is placed in this array.
    thread_struct * threadStructs[NUMBER_OF_THREADS];
+   int startIndex = 0;
    for (int counter = 0; counter < NUMBER_OF_THREADS; counter++) {
-      int startIndex = counter;
-      int endIndex = std::min(counter + sliceSize - 1, (int)wordArray.size() - 1);
+      int endIndex = std::min(startIndex + sliceSize - 1, (int)wordArray.size() - 1);
       if (counter == NUMBER_OF_THREADS - 1) {
-         endIndex = counter + lastSliceSize - 1;
+         endIndex = startIndex + lastSliceSize - 1;
       }
       threadStructs[counter] = new thread_struct(startIndex, endIndex, wordArray, wordsToIgnore);
+      startIndex = endIndex + 1;
    }
 
    // Launch the threads and keep them in the array.
@@ -145,15 +146,15 @@ int main(int argc, const char * argv[]) {
    }
 
    // Merge thread results from the thread structs to wordCount and total counters.
-   int wordsTotal = 0;
-   int ignoredWordsTotal = 0;
+   long countedWordsTotal = 0;
+   long ignoredWordsTotal = 0;
 
    for (int counter = 0; counter < NUMBER_OF_THREADS; counter++) {
       for (const auto wordAndCount : threadStructs[counter]->threadWordCounts) {
          wordCounts[wordAndCount.first] += wordAndCount.second;
-         wordsTotal += threadStructs[counter]->wordCount;
-         ignoredWordsTotal += threadStructs[counter]->ignoredWordCount;
       }
+      countedWordsTotal += threadStructs[counter]->wordCount;
+      ignoredWordsTotal += threadStructs[counter]->ignoredWordCount;
    }
    for (int counter = 0; counter < NUMBER_OF_THREADS; counter++) {
       delete threadStructs[counter];
@@ -161,7 +162,7 @@ int main(int argc, const char * argv[]) {
 
    // Move words & counts to multimap reversed so that it can be sorted by value (count) with operator >
    // Multimap needed since several words can have same count -- which will be the key in the new multimap.
-   std::multimap<int,std::wstring, std::greater<int>> result;
+   std::multimap<int, std::wstring, std::greater<int>> result;
    std::transform(wordCounts.cbegin(), wordCounts.cend(), std::inserter(result, result.begin()),
                   [](auto const& p) {
                      return std::make_pair(p.second, p.first);
@@ -179,7 +180,12 @@ int main(int argc, const char * argv[]) {
    // Stop measuring time and print out the time performance.
    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
    std::chrono::milliseconds timeValue = std::chrono::duration_cast<std::chrono::milliseconds>(now-started);
-   std::wcout << L"Processed the book in " << timeValue.count() << L" ms." << std::endl;
-
+   std::wcout << L"Processed the book in     " << timeValue.count() << L" ms." << std::endl;
+   std::wcout << L"Words in book file:       " << wordArray.size() << std::endl;
+   std::wcout << L"Counted words in total:   " << countedWordsTotal << std::endl;
+   std::wcout << L"Words to ignore:          " << wordsToIgnore.size() << std::endl;
+   std::wcout << L"Words ignored in total:   " << ignoredWordsTotal << std::endl;
+   std::wcout << L"Unique words in total:    " << wordCounts.size() << std::endl;
+   
    return EXIT_SUCCESS;
 }
