@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(cpp-books VERSION 1.0.0 LANGUAGES CXX)
+project(cpp-books-threaded VERSION 1.0.0 LANGUAGES CXX)
 
 set(APP_NAME books)
 
@@ -7,7 +7,6 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 find_package(Boost 1.76.0 REQUIRED COMPONENTS system)
-
 
 if (WIN32)
     macro(get_WIN32_WINNT version)
@@ -30,7 +29,6 @@ if (WIN32)
 
     get_WIN32_WINNT(ver)
     add_definitions(-D_WIN32_WINNT=${ver})
-    add_definitions(-DBOOST_UUID_RANDOM_PROVIDER_FORCE_WINCRYPT)
 endif(WIN32)
 
 if (Boost_FOUND)
@@ -38,6 +36,6 @@ if (Boost_FOUND)
 
    set_target_properties(${APP_NAME} PROPERTIES CXX_STANDARD 17)
 
-   target_include_directories(${APP_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
+   target_include_directories(${APP_NAME} PRIVATE ${Boost_INCLUDE_DIRS} "../")
 
 endif()

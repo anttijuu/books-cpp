@@ -12,6 +12,7 @@
 #include <sstream>
 #include <algorithm>
 #include <iterator>
+#include <map>
 #include <unordered_map>
 #include <locale>
 #include <codecvt>
@@ -34,11 +35,13 @@ int main(int argc, const char * argv[]) {
    std::chrono::system_clock::time_point started = std::chrono::system_clock::now();
 
    // This dictionary will contain the words with counts.
-   std::unordered_map<std::wstring, int> wordCount;
+   // std::map<std::wstring, int> wordCount;
+	std::unordered_map<std::wstring, int> wordCount;
 
    // Line of text read from a file.
    std::wstring line;
-   // The words to ignore; not counted.
+
+   // The words to ignore; not to be counted.
    std::vector<std::wstring> wordsToIgnore;
    const std::wstring ignoreSeparators(L",\n\r");
 
@@ -49,6 +52,7 @@ int main(int argc, const char * argv[]) {
    std::wifstream ignoreFile(argv[2]);
    ignoreFile.imbue(loc);
    while (std::getline(ignoreFile,line)) {
+      // Convert line to lowecase.
       std::transform(line.begin(), line.end(), line.begin(),
                      [](wchar_t c){ return std::tolower(c); });
       std::vector<std::wstring> ignoreWords;
@@ -56,6 +60,9 @@ int main(int argc, const char * argv[]) {
       wordsToIgnore.insert(wordsToIgnore.end(), ignoreWords.begin(), ignoreWords.end());
    }
    ignoreFile.close();
+
+   int ignoredWordsTotal = 0;
+   int wordsInTotal = 0;
 
    // Read book words, line by line.
    int totalWordCount = 0;
@@ -89,11 +96,13 @@ int main(int argc, const char * argv[]) {
    }
    bookFile.close();
 
+   int uniqueWordsUseCount = 0;
    // Move words & counts to multimap reversed so that it can be sorted by value (count) with operator >
    // Multimap needed since several words can have same count -- which will be the key in the new multimap.
    std::multimap<int,std::wstring, std::greater<int>> result;
    std::transform(wordCount.cbegin(), wordCount.cend(), std::inserter(result, result.begin()),
-                  [](auto const& p) {
+                  [&uniqueWordsUseCount](auto const& p) {
+                     uniqueWordsUseCount += p.second;
                      return std::make_pair(p.second, p.first);
                   });
 

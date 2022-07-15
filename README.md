@@ -6,7 +6,9 @@ Often in this problem there is also a set of words to ignore when counting the w
 
 This classic problem is often given to students to learn how to implement this using one of the basic data structures, such as a hash table or binary search tree.
 
-This project contains two implementations of this problem. In both implementations C++ Standard Library map (a dictionary) is used. So here we are not interested in which data structure to use to solve the problem. The goal of these two implementations is to compare the speed differences of a multi-threaded implementation to a single-threaded implementation. Can threads be used to improve the performance of counting the unique words.
+This project contains two implementations of this problem. In both implementations C++ Standard Library map (a dictionary) is used. So here we are not interested in which data structure to use to solve the problem. The goal of these two implementations is to compare the speed differences of a *multi-threaded* implementation to a *single-threaded* implementation. Can threads be used to improve the performance of counting the unique words.
+
+However, the project also shows that using the perhaps more well known `std::map` by default may not always be the best choice. Especially when time performance is important...
 
 ## Requirements for building and running
 
@@ -43,6 +45,8 @@ And then execute the app to print top-100 list of words with frequencies:
 ./books <path-to-book-file.txt> <path-to-ignore-file.txt> 100
 ```
 
+The project contains `do-ninja.sh` for building for command line using Ninja, and `go.sh` for executing the app using provided sample files in `sample` directory.
+ 
 > Note that Ninja build was created with `Release` configuration. When measuring execution speed release should be the selected configuration since debug configurations are usually slower and do not reflect the real time performance in production code.
 
 
@@ -83,6 +87,8 @@ And then execute the app to print top-100 list of words with frequencies:
 ./books <path-to-book-file.txt> <path-to-ignore-file.txt> 100
 ```
 
+Again you may use the provided `do-ninja.sh` and `go.sh` for building and executing the app.
+ 
 ## Comparisons
 
 Speed comparisons here have been measured using builds with Release configurations in a Apple Mac Mini M1 2020 with 16GB of RAM, SSD disk, macOS Monterey 12.2.1 (21D62). Compiler used was Apple clang version 13.0.0.
