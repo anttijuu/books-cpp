@@ -1,2 +1,2 @@
-ninja/books ~/workspace/BooksAndWords/samples/Bulk.txt ~/workspace/BooksAndWords/samples/ignore-words.txt 100
+ninja/books ../sample/Bulk.txt ../sample/ignore-words.txt 100
 

@@ -12,7 +12,8 @@
 #include <sstream>
 #include <algorithm>
 #include <iterator>
-#include <map>
+// #include <map>
+#include <unordered_map>
 #include <locale>
 #include <codecvt>
 
@@ -34,7 +35,8 @@ int main(int argc, const char * argv[]) {
    std::chrono::system_clock::time_point started = std::chrono::system_clock::now();
 
    // This dictionary will contain the words with counts.
-   std::map<std::wstring, int> wordCount;
+   // std::map<std::wstring, int> wordCount;
+	std::unordered_map<std::wstring, int> wordCount;
 
    // Line of text read from a file.
    std::wstring line;
@@ -63,6 +65,9 @@ int main(int argc, const char * argv[]) {
    int wordsInTotal = 0;
 
    // Read book words, line by line.
+   int totalWordCount = 0;
+   int ignoredWordCount = 0;
+   int countedWords = 0;
    std::wifstream bookFile(argv[1]);
    bookFile.imbue(loc);
    while (std::getline(bookFile,line)) {
@@ -72,17 +77,18 @@ int main(int argc, const char * argv[]) {
          if (std::isalpha(ch, loc)) {
             word += ch;
          } else {
-            wordsInTotal++;
+            totalWordCount++;
             if (word.length() > 1) {
                std::transform(word.begin(), word.end(), word.begin(),
                               [](wchar_t c){ return std::tolower(c); });
                if (std::find(wordsToIgnore.begin(), wordsToIgnore.end(), word) == wordsToIgnore.end()) {
+                  countedWords++;
                   wordCount[word] += 1;
                } else {
-                  ignoredWordsTotal += 1;
+                  ignoredWordCount++;
                }
             } else {
-               ignoredWordsTotal += 1;
+               ignoredWordCount++;
             }
             word = L"";
          }
@@ -113,11 +119,11 @@ int main(int argc, const char * argv[]) {
    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
    std::chrono::milliseconds timeValue = std::chrono::duration_cast<std::chrono::milliseconds>(now-started);
    std::wcout << L"Processed the book in " << timeValue.count() << L" ms." << std::endl;
-   std::wcout << L"Count of all words in total: " << wordsInTotal << std::endl;
-   std::wcout << L"Count of unique words: " << wordCount.size() << std::endl;
-   std::wcout << L"Count of usage of unique words in total: " << uniqueWordsUseCount << std::endl;
-   std::wcout << L"Count of words to ignore: " << wordsToIgnore.size() << std::endl;
-   std::wcout << L"Count of words ignored: " << ignoredWordsTotal << std::endl;
+   std::wcout << L"Words in book file:       " << totalWordCount << std::endl;
+   std::wcout << L"Counted words in total:   " << countedWords << std::endl;
+   std::wcout << L"Words to ignore:          " << wordsToIgnore.size() << std::endl;
+   std::wcout << L"Words ignored in total:   " << ignoredWordCount << std::endl;
+   std::wcout << L"Unique words in total:    " << wordCount.size() << std::endl;
 
    return EXIT_SUCCESS;
 }
