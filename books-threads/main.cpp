@@ -21,7 +21,7 @@
 #include <boost/algorithm/string.hpp>
 
 /**
- A structure the threads use when doing word calculation.
+ A structure the threads use when doing word frequency calculation.
  */
 typedef struct thread_struct_t {
    /**
@@ -34,7 +34,8 @@ typedef struct thread_struct_t {
    thread_struct_t(int start, int end,
                    const std::vector<std::wstring> & rawWords,
                    const std::vector<std::wstring> & toIgnore)
-   : startIndex(start), endIndex(end), rawWords(rawWords), toIgnore(toIgnore) {
+   : startIndex(start), endIndex(end), rawWords(rawWords), toIgnore(toIgnore),
+     wordCount(0), ignoredWordCount(0) {
       // Empty
    }
    /** The start index to the all words vector this thread will process. */
@@ -45,19 +46,30 @@ typedef struct thread_struct_t {
    int wordCount;
    /** The count of words ignored while the thread processed the words. */
    int ignoredWordCount;
+   // Constant reference to all the words, read from the book file, unprocessed.
    const std::vector<std::wstring> & rawWords;
+   // Constant reference to the words to ignore, read from the ignore file.
    const std::vector<std::wstring> & toIgnore;
-   std::map<std::wstring,int> threadWordCounts;
+   // The results of one thread: the word - word count pairs for unique words
+   // in the array slice processed by one thread.
+   std::map<std::wstring,int> wordCounts;
 } thread_struct;
 
-// The thread function
+// The thread function, processing a slice of the all words read from the book file.
 void run(thread_struct & threadData) {
+   // For each word read from the book in this array slice...
    for (int index = threadData.startIndex; index <= threadData.endIndex; index++) {
+      // Look up the word.
       const std::wstring & word = threadData.rawWords[index];
+      // Increase the word count this thread has processed.
+      threadData.wordCount++;
+      // If the word length is greater than two chars and it is not one of the words to ignore.
       if (word.length() > 1 && std::find(threadData.toIgnore.begin(), threadData.toIgnore.end(), word) == threadData.toIgnore.end()) {
-         threadData.wordCount++;
-         threadData.threadWordCounts[word] += 1;
+         // Add the frequency count of the word. If the word is not
+         // in the map, it is added there with count of 1.
+         threadData.wordCounts[word] += 1;
       } else {
+         // Otherwise words was ignored, so increase the ignore count for this thread.
          threadData.ignoredWordCount++;
       }
    }
@@ -77,28 +89,27 @@ int main(int argc, const char * argv[]) {
    std::ios_base::sync_with_stdio(false);
    std::locale loc(std::locale::classic(), new std::codecvt_utf8<wchar_t>);
 
-   // Start measuring time
+   // Start measuring time.
    std::chrono::system_clock::time_point started = std::chrono::system_clock::now();
-
-   // This map will contain the unique words with counts
-   std::map<std::wstring, int> wordCounts;
 
    // This array contains the words to ignore
    std::vector<std::wstring> wordsToIgnore;
 
-   // Read ignore words
+   // Read the words to ignore.
    std::wifstream ignoreFile(argv[2]);
    ignoreFile.imbue(loc);
    const std::wstring ignoreSeparators(L",\n\r");
    std::wstring line;
    while (std::getline(ignoreFile,line)) {
+      std::transform(line.begin(), line.end(), line.begin(),
+                     [](wchar_t c){ return std::tolower(c); });
       std::vector<std::wstring> ignoreWords;
       boost::split(ignoreWords, line, boost::is_any_of(ignoreSeparators));
       wordsToIgnore.insert(wordsToIgnore.end(), ignoreWords.begin(), ignoreWords.end());
    }
    ignoreFile.close();
 
-   // Read book words into words array
+   // Read all the book words into words array
    std::vector<std::wstring> wordArray;
 
    std::wifstream bookFile(argv[1]);
@@ -118,43 +129,51 @@ int main(int argc, const char * argv[]) {
    }
    bookFile.close();
 
-   // Prepare the threads
+   // Prepare the threads, eight of them (assuming eight cores in the computer).
    enum { NUMBER_OF_THREADS = 8 };
    int sliceSize = wordArray.size() / NUMBER_OF_THREADS;
    int lastSliceSize = sliceSize + wordArray.size() % NUMBER_OF_THREADS;
+
    // Thread data is placed in this array.
    thread_struct * threadStructs[NUMBER_OF_THREADS];
+   int startIndex = 0;
    for (int counter = 0; counter < NUMBER_OF_THREADS; counter++) {
-      int startIndex = counter;
-      int endIndex = std::min(counter + sliceSize - 1, (int)wordArray.size() - 1);
+      int endIndex = std::min(startIndex + sliceSize - 1, (int)wordArray.size() - 1);
       if (counter == NUMBER_OF_THREADS - 1) {
-         endIndex = counter + lastSliceSize - 1;
+         endIndex = startIndex + lastSliceSize - 1;
       }
       threadStructs[counter] = new thread_struct(startIndex, endIndex, wordArray, wordsToIgnore);
+      startIndex = endIndex + 1;
    }
 
-   // Launch the threads and keep them in the array.
+   // Launch the threads keeping them in the array...
    std::thread threads[NUMBER_OF_THREADS];
    for (int counter = 0; counter < NUMBER_OF_THREADS; counter++) {
       threads[counter] = std::thread(run, std::ref(*threadStructs[counter]));
    }
 
-   // Wait for the threads to finish.
+   // ...so we can wait for the threads to finish.
    for (int counter = 0; counter < NUMBER_OF_THREADS; counter++) {
       threads[counter].join();
    }
 
    // Merge thread results from the thread structs to wordCount and total counters.
-   int wordsTotal = 0;
+   int wordsInTotal = 0;
    int ignoredWordsTotal = 0;
+   int uniqueWordsUseCount = 0;
+
+   // This map will contain all the unique words with counts.
+   std::map<std::wstring, int> wordCounts;
 
    for (int counter = 0; counter < NUMBER_OF_THREADS; counter++) {
-      for (const auto wordAndCount : threadStructs[counter]->threadWordCounts) {
+      for (const auto wordAndCount : threadStructs[counter]->wordCounts) {
          wordCounts[wordAndCount.first] += wordAndCount.second;
-         wordsTotal += threadStructs[counter]->wordCount;
-         ignoredWordsTotal += threadStructs[counter]->ignoredWordCount;
+         uniqueWordsUseCount += wordAndCount.second;
       }
+      wordsInTotal += threadStructs[counter]->wordCount;
+      ignoredWordsTotal += threadStructs[counter]->ignoredWordCount;
    }
+
    for (int counter = 0; counter < NUMBER_OF_THREADS; counter++) {
       delete threadStructs[counter];
    }
@@ -180,6 +199,11 @@ int main(int argc, const char * argv[]) {
    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
    std::chrono::milliseconds timeValue = std::chrono::duration_cast<std::chrono::milliseconds>(now-started);
    std::wcout << L"Processed the book in " << timeValue.count() << L" ms." << std::endl;
+   std::wcout << L"All words in total counted " << wordsInTotal << " should match words read from book file: " << wordArray.size() << std::endl;
+   std::wcout << L"Count of unique words: " << wordCounts.size() << std::endl;
+   std::wcout << L"Count of usage of unique words in total: " << uniqueWordsUseCount << std::endl;
+   std::wcout << L"Count of words to ignore: " << wordsToIgnore.size() << std::endl;
+   std::wcout << L"Count of words ignored: " << ignoredWordsTotal << std::endl;
 
    return EXIT_SUCCESS;
 }
