@@ -6,9 +6,11 @@ Often in this problem there is also a set of words to ignore when counting the w
 
 This classic problem is often given to students to learn how to implement this using one of the basic data structures, such as a hash table or binary search tree.
 
-This project contains two implementations of this problem. In both implementations C++ Standard Library map (a dictionary) is used. So here we are not interested in which data structure to use to solve the problem. The goal of these two implementations is to compare the speed differences of a *multi-threaded* implementation to a *single-threaded* implementation. Can threads be used to improve the performance of counting the unique words.
+This project contains two implementations of this problem. In both implementations C++ Standard Library map (a dictionary of key-value pairs) is used. Key is the unique words in a book, while value is the count of the word in the book.
 
-However, the project also shows that using the perhaps more well known `std::map` by default may not always be the best choice. Especially when time performance is important...
+Here we are not interested in which data structure to use to solve the problem. The goal of these two implementations is to compare the speed differences of a *multi-threaded* implementation to a *single-threaded* implementation. Can threads be used to improve the performance of counting the unique words?
+
+However, the project also shows that using the `std::map` by default may not always be the best choice. Especially when time performance is important. Since there is an option...
 
 ## Requirements for building and running
 
@@ -23,7 +25,7 @@ The single-threaded implementation can be found in the subdirectory [books](book
 
 The logic is simple. The program will:
 
-1. first check the program arguments: first argument is the book file, name, second is the ignore file name and the third one is the number of top words to print, e.g. 100,
+1. first check the program arguments: first argument is the book file, name, second is the words to ignore file name and the third one is the number of top words to print, e.g. 100,
 1. then do some preparations; makes sure the program can handle UTF-8 encoded strings, and initiates measuring the performance in time,
 1. next the words to be ignored is read from a text file. Ignored words must be separated by commas and/or end of line chars,
 1. after this the book file is read, line by line. When processing each line, word breaks are identified by characters by calling `std::isalpha` -- returning false indicates a word break. Then the chars of the word are converted to lowercase and if the length of the word is two characters or more, it is added to a `std::map` with a frequency count. If the word is already in the map, the frequency count is increased by one,
@@ -34,7 +36,7 @@ The logic is simple. The program will:
 You can build the code using the provided [CMake](https://cmake.org) file `CMakeLists.txt` and [Ninja](https://ninja-build.org) build tool:
 
 ```console
-mkdir ninja && cmake ninja
+mkdir ninja && cd ninja
 cmake -GNinja -DCMAKE_BUILD_TYPE=Release ..
 ninja
 ```
@@ -56,14 +58,14 @@ The multi-threaded implementation can be found in the `books-threads` subdirecto
 
 The logic is mostly the same than in the single-threaded implementation. There are some differences though.
 
-* To enable parallel counting of words, all the words in the book are read into a `std::vector` of strings.
-* The array is "sliced" into eight parts, to be processed by eight threads. No actual slicing is done to separate string containers, though.
-* Instead, each slice is a slice of the original vector of strings, described by startIndex-endIndex.
+* To enable parallel counting of words, all the words in the book are first read into a `std::vector` of strings.
+* The array is then "sliced" into eight parts, to be processed by eight threads, in parallel. No actual slicing is done to separate string containers, though, but each thread just handles the area of the array pointed to the thread.
+* Thus each slice is a slice of the original vector of strings, described by startIndex-endIndex.
 * A struct `thread_struct` is created for each thread, having a constant reference to the original vector as well as to the words-to-ignore vector, and the start and end indices to process. 
 * The references to the original data are const since we do not want the threads to change the original data in any way during the processing. Since the original data cannot be changed, and the threads will each process their own slice of the original data, we do not need any thread locking facilities to control acccess to the shared data. This lack of possibility to manipulate shared of data and thus lack of locks makes the processing faster.
 * The `thread_struct` will also contain writeable map of word-frequency pairs to calculate the word frequencies from the thread's own slice of the array of all words. Additionally the `thread_struct` will have counter variables to count statistics of the processing.
 
-So instead of reading the book data line to line and processing all the lines linearly in a single thread, this implementation will 
+So, instead of reading the book data line to line and processing all the lines linearly in a single thread, this implementation will 
 
 1. read all words into a shared vector and then,
 1. prepare eight `thread_struct`s for each of the eight threads to process and,
@@ -76,7 +78,7 @@ So instead of reading the book data line to line and processing all the lines li
 You can again build the code using the provided [CMake](https://cmake.org) file `CMakeLists.txt` and [Ninja](https://ninja-build.org) build tool:
 
 ```console
-mkdir ninja && cmake ninja
+mkdir ninja && cd ninja
 cmake -GNinja -DCMAKE_BUILD_TYPE=Release ..
 ninja
 ```
@@ -95,19 +97,43 @@ Speed comparisons here have been measured using builds with Release configuratio
 
 Test file was a book file with 17 069 578 bytes of data, having 3 538 151 words, of which 2 293 709 were counted as words to include in the frequency count, while 1 244 442 words were ignored. There was 42 words to ignore in the ignore file. The book file has 9 6205 unique words in total.
 
-| Implementation     | Time performance (ms) |
-|--------------------|-----------------------|
-| single-threaded map|                   665 |
-| multi-threaded map |                   491 |
+The table below shows typical execution times.
 
-Using threads leads to an execution time 74% of the single threaded implementation.
+| Implementation     | Time performance (ms) :|
+|--------------------|------------------------|
+| single-threaded map|                   665 :|
+| multi-threaded map |                   491 :|
 
-| Implementation           | Time performance (ms) |
-|--------------------------|-----------------------|
-| single-threaded map      |                   665 |
-| single-threaded multimap |                   446 |
-| multi-threaded map       |                   491 |
+Using threads leads to an execution time 74% of the single threaded implementation. An expected and understandable improvement.
 
+Should we be happy? Consider threading a good solution, improved the performance and rewarding ourselves with a pint?
+
+## Mind the map
+
+When implementing the threaded solution, I happened to stop by to read the documentation at [cppreference.com](https://en.cppreference.com/w/cpp/container/map) says:
+
+> "std::map is a sorted associative container that contains key-value pairs with unique keys. Keys are sorted by using the comparison function Compare."
+
+Note the part "...keys are sorted...". When adding the unique words to the map, the dictionary is sorted after each add. **That takes time**. Since we are not even interested about the words being in order, this is unnecessary. Can we avoid this? 
+
+Fortunately, there is a dictionary in `std` that does not sort. Let's test how `std::unordered_map` performs against `std::map`. More information on unordered map in [cppreference.com](https://en.cppreference.com/w/cpp/container/unordered_map).
+
+The code already contains both maps, the other one commented out. Try out both versions to verify, commenting the other. My tests with both maps gave the following results:
+
+| Implementation                | Time performance (ms) :|
+|-------------------------------|------------------------|
+| single-threaded map           |                   665 :|
+| single-threaded unordered map |                   446 :|
+| multi-threaded map            |                   491 :|
+| multi-threaded unordered map  |                   434 :|
+
+Based on these tests, implementing multi-threaded `std::map` version to boost time performance was a wasted effort! Single-threaded unordered map was *faster* than threaded map implementation. Just taking away the sorting to keep the keys (unique words in the book) in order made the unordered map version faster.
+
+You can also see that combining both threading and unordered maps does not provide any time performance advantage, being only 12 ms faster than the single-threaded version.
+
+## Conclusion
+
+Mind the map. Know the available data structures. Consider the needs of the task and pick the data structure fulfilling the needs. In this case `std::unordered_map` is more suitable solution than using the more familiar and easier to type `std::map`. Using a fast data structure may save you from complicated threaded code that you may not even need to implement. 
 
 ## About
 
