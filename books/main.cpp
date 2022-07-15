@@ -12,7 +12,7 @@
 #include <sstream>
 #include <algorithm>
 #include <iterator>
-#include <map>
+#include <unordered_map>
 #include <locale>
 #include <codecvt>
 
@@ -34,7 +34,7 @@ int main(int argc, const char * argv[]) {
    std::chrono::system_clock::time_point started = std::chrono::system_clock::now();
 
    // This dictionary will contain the words with counts.
-   std::map<std::wstring, int> wordCount;
+   std::unordered_map<std::wstring, int> wordCount;
 
    // Line of text read from a file.
    std::wstring line;
@@ -49,6 +49,8 @@ int main(int argc, const char * argv[]) {
    std::wifstream ignoreFile(argv[2]);
    ignoreFile.imbue(loc);
    while (std::getline(ignoreFile,line)) {
+      std::transform(line.begin(), line.end(), line.begin(),
+                     [](wchar_t c){ return std::tolower(c); });
       std::vector<std::wstring> ignoreWords;
       boost::split(ignoreWords, line, boost::is_any_of(ignoreSeparators));
       wordsToIgnore.insert(wordsToIgnore.end(), ignoreWords.begin(), ignoreWords.end());

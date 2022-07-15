@@ -12,7 +12,7 @@
 #include <sstream>
 #include <algorithm>
 #include <iterator>
-#include <map>
+#include <unordered_map>
 #include <locale>
 #include <codecvt>
 #include <algorithm>
@@ -47,7 +47,7 @@ typedef struct thread_struct_t {
    long ignoredWordCount;
    const std::vector<std::wstring> & rawWords;
    const std::vector<std::wstring> & toIgnore;
-   std::map<std::wstring,int> threadWordCounts;
+   std::unordered_map<std::wstring,int> threadWordCounts;
 } thread_struct;
 
 // The thread function
@@ -80,9 +80,6 @@ int main(int argc, const char * argv[]) {
    // Start measuring time
    std::chrono::system_clock::time_point started = std::chrono::system_clock::now();
 
-   // This map will contain the unique words with counts
-   std::map<std::wstring, int> wordCounts;
-
    // This array contains the words to ignore
    std::vector<std::wstring> wordsToIgnore;
 
@@ -92,15 +89,17 @@ int main(int argc, const char * argv[]) {
    const std::wstring ignoreSeparators(L",\n\r");
    std::wstring line;
    while (std::getline(ignoreFile,line)) {
+      std::transform(line.begin(), line.end(), line.begin(),
+                     [](wchar_t c){ return std::tolower(c); });
       std::vector<std::wstring> ignoreWords;
       boost::split(ignoreWords, line, boost::is_any_of(ignoreSeparators));
       wordsToIgnore.insert(wordsToIgnore.end(), ignoreWords.begin(), ignoreWords.end());
    }
    ignoreFile.close();
 
-   // Read book words into words array
+   // Read all book words into words array
    std::vector<std::wstring> wordArray;
-
+   wordArray.reserve(4000000);
    std::wifstream bookFile(argv[1]);
    bookFile.imbue(loc);
    while (std::getline(bookFile,line)) {
@@ -148,7 +147,9 @@ int main(int argc, const char * argv[]) {
    // Merge thread results from the thread structs to wordCount and total counters.
    long countedWordsTotal = 0;
    long ignoredWordsTotal = 0;
-
+   // This map will contain the unique words with counts
+   std::unordered_map<std::wstring, int> wordCounts;
+   
    for (int counter = 0; counter < NUMBER_OF_THREADS; counter++) {
       for (const auto wordAndCount : threadStructs[counter]->threadWordCounts) {
          wordCounts[wordAndCount.first] += wordAndCount.second;
@@ -162,12 +163,14 @@ int main(int argc, const char * argv[]) {
 
    // Move words & counts to multimap reversed so that it can be sorted by value (count) with operator >
    // Multimap needed since several words can have same count -- which will be the key in the new multimap.
-   std::multimap<int, std::wstring, std::greater<int>> result;
+   // std::multimap<int, std::wstring, std::greater<int>> result;
+   std::multimap<int, std::wstring> result;
+   
    std::transform(wordCounts.cbegin(), wordCounts.cend(), std::inserter(result, result.begin()),
                   [](auto const& p) {
                      return std::make_pair(p.second, p.first);
                   });
-
+   
    // Print the results of top words with counts.
    int counter = 0;
    for (const auto & element : result) {
