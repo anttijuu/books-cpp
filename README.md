@@ -12,7 +12,7 @@ However, the project also shows that using the perhaps more well known `std::map
 
 ## Requirements for building and running
 
-The code here requires C++ v17 and [Boost](https://www.boost.org). Boost is used in splitting the ignore file strings using comma and end of line chars with `boost::split`.
+The code here requires C++ v17 and [Boost](https://www.boost.org) version 1.76 or higher. Boost is used in splitting the ignore file strings using comma and end of line chars with `boost::split`.
  
  Projects are described using [CMake](https://cmake.org) so any IDE which can import projects from CMake can be used to import them to the IDE. Building from command line is described below.
  
@@ -91,15 +91,16 @@ Again you may use the provided `do-ninja.sh` and `go.sh` for building and execut
  
 ## Comparisons
 
-Speed comparisons here have been measured using builds with Release configurations in a Apple Mac Mini M1 2020 with 16GB of RAM, SSD disk, macOS Monterey 12.2.1 (21D62). Compiler used was Apple clang version 13.0.0.
+Speed comparisons here have been measured using builds with Release configurations in a Apple Mac Mini M1 2020 with 16GB of RAM, SSD disk, macOS Monterey 12.4. Compiler used was AppleClang 13.1.6.13160021
 
-Test file was a book file with 17 069 578 bytes of data, having 3 845 226 words, of which 2 379 837 were counted as words to include in the frequency count, while 1 465 389 words were ignored. There was 40 words to ignore in the ignore file. The book file has 97 145 unique words in total.
+Test file was a book file with 17 069 578 bytes of data, having 3 538 151 words, of which 2 293 709 were counted as words to include in the frequency count, while 1 244 442 words were ignored. There was 42 words to ignore in the ignore file. The book file has 9 6205 unique words in total.
 
-| Implementation  | Time performance |
-|-----------------|------------------|
-| single-threaded |                  |
-| multi-threaded  |                  |
+| Implementation  | Time performance (ms) |
+|-----------------|-----------------------|
+| single-threaded |                   665 |
+| multi-threaded  |                   491 |
 
+74%
 
 
 ## About
