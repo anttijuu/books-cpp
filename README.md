@@ -95,12 +95,18 @@ Speed comparisons here have been measured using builds with Release configuratio
 
 Test file was a book file with 17 069 578 bytes of data, having 3 538 151 words, of which 2 293 709 were counted as words to include in the frequency count, while 1 244 442 words were ignored. There was 42 words to ignore in the ignore file. The book file has 9 6205 unique words in total.
 
-| Implementation  | Time performance (ms) |
-|-----------------|-----------------------|
-| single-threaded |                   665 |
-| multi-threaded  |                   491 |
+| Implementation     | Time performance (ms) |
+|--------------------|-----------------------|
+| single-threaded map|                   665 |
+| multi-threaded map |                   491 |
 
-74%
+Using threads leads to an execution time 74% of the single threaded implementation.
+
+| Implementation           | Time performance (ms) |
+|--------------------------|-----------------------|
+| single-threaded map      |                   665 |
+| single-threaded multimap |                   446 |
+| multi-threaded map       |                   491 |
 
 
 ## About

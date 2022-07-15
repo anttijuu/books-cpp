@@ -31,16 +31,16 @@ typedef struct thread_struct_t {
 	 @param rawWords All the words of the book in a vector.
 	 @param toIgnore The words not counted.
 	 */
-	thread_struct_t(int start, int end,
+	thread_struct_t(long start, long end,
 						 const std::vector<std::wstring> & rawWords,
 						 const std::vector<std::wstring> & toIgnore)
 	: startIndex(start), endIndex(end), rawWords(rawWords), toIgnore(toIgnore), wordCount(0), ignoredWordCount(0) {
 		// Empty
 	}
 	/** The start index to the all words vector this thread will process. */
-	const int startIndex;
+	const long startIndex;
 	/** The end index to the all words vector this thread will process. */
-	const int endIndex;
+	const long endIndex;
 	/** The count of words in the vector slice this thread processes. */
 	long wordCount;
 	/** The count of words ignored while the thread processed the words. */
@@ -51,14 +51,14 @@ typedef struct thread_struct_t {
 	const std::vector<std::wstring> & toIgnore;
 	// The results of one thread: the word - word count pairs for unique words
 	// in the array slice processed by one thread.
-	// std::unordered_map<std::wstring,int> wordCounts;
-	std::map<std::wstring,int> wordCounts;
+	std::unordered_map<std::wstring,int> wordCounts;
+	// std::map<std::wstring,int> wordCounts;
 } thread_struct;
 
 // The thread function, processing a slice of the all words read from the book file.
 void run(thread_struct & threadData) {
 	// For each word read from the book in this array slice...
-	for (int index = threadData.startIndex; index <= threadData.endIndex; index++) {
+	for (long index = threadData.startIndex; index <= threadData.endIndex; index++) {
 		// Look up the word.
 		const std::wstring & word = threadData.rawWords[index];
 		// Increase the word count this thread has processed.
@@ -93,8 +93,8 @@ int main(int argc, const char * argv[]) {
 	std::chrono::system_clock::time_point started = std::chrono::system_clock::now();
 
 	// This map will contain the unique words with counts
-	// std::unordered_map<std::wstring, int> wordCounts;
-	std::map<std::wstring, int> wordCounts;
+	std::unordered_map<std::wstring, int> wordCounts;
+	// std::map<std::wstring, int> wordCounts;
 
 	// This array contains the words to ignore
 	std::vector<std::wstring> wordsToIgnore;
@@ -135,14 +135,14 @@ int main(int argc, const char * argv[]) {
 
 	// Prepare the threads, eight of them (assuming eight cores in the computer).
 	enum { NUMBER_OF_THREADS = 8 };
-	int sliceSize = wordArray.size() / NUMBER_OF_THREADS;
-	int lastSliceSize = sliceSize + wordArray.size() % NUMBER_OF_THREADS;
+	long sliceSize = wordArray.size() / NUMBER_OF_THREADS;
+	long lastSliceSize = sliceSize + wordArray.size() % NUMBER_OF_THREADS;
 
 	// Thread data is placed in this array.
 	thread_struct * threadStructs[NUMBER_OF_THREADS];
-	int startIndex = 0;
+	long startIndex = 0;
 	for (int counter = 0; counter < NUMBER_OF_THREADS; counter++) {
-		int endIndex = std::min(startIndex + sliceSize - 1, (int)wordArray.size() - 1);
+		long endIndex = std::min<long>(startIndex + sliceSize - 1, wordArray.size() - 1);
 		if (counter == NUMBER_OF_THREADS - 1) {
 			endIndex = startIndex + lastSliceSize - 1;
 		}
