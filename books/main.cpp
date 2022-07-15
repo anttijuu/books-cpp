@@ -34,9 +34,10 @@ int main(int argc, const char * argv[]) {
 	// Start measuring time performance.
 	std::chrono::system_clock::time_point started = std::chrono::system_clock::now();
 
-	// This dictionary will contain the words with counts.
-	std::unordered_map<std::wstring, int> wordCount;
-	// std::map<std::wstring, int> wordCount;
+	// This dictionary will contain the words with counts.Try both map and unordered_map
+	// to see time performance differences, if any.
+	// std::unordered_map<std::wstring, int> wordCount;
+	std::map<std::wstring, int> wordCount;
 
 	// Line of text read from a file.
 	std::wstring line;

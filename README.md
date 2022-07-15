@@ -1,16 +1,16 @@
-# Books
+# Books & maps
 
 The classic data structures and algorithms problem: having a text file (a book), count the number of unique words in the book with their frequencies and report the top 100 most often used words in the book in descending order.
 
-Often in this problem there is also a set of words to ignore when counting the word frequencies. These words can be stored in another text file.
+Here we are not interested in which data structure to use to solve the problem. The goal of these two implementations is to compare the speed differences of a *multi-threaded* implementation to a *single-threaded* implementation. Can threads be used to improve the performance of counting the unique words, using the C++ standard library `std::map`?
+
+---
 
 This classic problem is often given to students to learn how to implement this using one of the basic data structures, such as a hash table or binary search tree.
 
-This project contains two implementations of this problem. In both implementations C++ Standard Library map (a dictionary of key-value pairs) is used. Key is the unique words in a book, while value is the count of the word in the book.
+This project contains two implementations of this problem. In both implementations C++ Standard Library `std::map` (a dictionary of key-value pairs) is used. Key is the unique words in a book, while value is the count of the word in the book.
 
-Here we are not interested in which data structure to use to solve the problem. The goal of these two implementations is to compare the speed differences of a *multi-threaded* implementation to a *single-threaded* implementation. Can threads be used to improve the performance of counting the unique words?
-
-However, the project also shows that using the `std::map` by default may not always be the best choice. Especially when time performance is important. Since there is an option...
+However, the project also shows that using the (perhaps familiar) `std::map` by default may not always be the best choice. Especially when time performance is important. Since there is an option, maybe a better one, as we will see in the end...
 
 ## Requirements for building and running
 
@@ -63,7 +63,7 @@ The logic is mostly the same than in the single-threaded implementation. There a
 * Thus each slice is a slice of the original vector of strings, described by startIndex-endIndex.
 * A struct `thread_struct` is created for each thread, having a constant reference to the original vector as well as to the words-to-ignore vector, and the start and end indices to process. 
 * The references to the original data are const since we do not want the threads to change the original data in any way during the processing. Since the original data cannot be changed, and the threads will each process their own slice of the original data, we do not need any thread locking facilities to control acccess to the shared data. This lack of possibility to manipulate shared of data and thus lack of locks makes the processing faster.
-* The `thread_struct` will also contain writeable map of word-frequency pairs to calculate the word frequencies from the thread's own slice of the array of all words. Additionally the `thread_struct` will have counter variables to count statistics of the processing.
+* The `thread_struct` will also contain writeable map of word-frequency pairs to calculate the word frequencies from the thread's *own slice* of the array of all words. Additionally, the `thread_struct` will have counter variables to count statistics of the processing.
 
 So, instead of reading the book data line to line and processing all the lines linearly in a single thread, this implementation will 
 
@@ -89,11 +89,11 @@ And then execute the app to print top-100 list of words with frequencies:
 ./books <path-to-book-file.txt> <path-to-ignore-file.txt> 100
 ```
 
-Again you may use the provided `do-ninja.sh` and `go.sh` for building and executing the app.
- 
+You may use the provided `do-ninja.sh` and `go.sh` for building and executing the app.
+
 ## Comparisons
 
-Speed comparisons here have been measured using builds with Release configurations in a Apple Mac Mini M1 2020 with 16GB of RAM, SSD disk, macOS Monterey 12.4. Compiler used was AppleClang 13.1.6.13160021
+Speed comparisons below have been measured using builds with Release configurations in a Apple Mac Mini M1 2020 with 16GB of RAM, SSD disk, macOS Monterey 12.4. Compiler used was AppleClang 13.1.6.13160021
 
 Test file was a book file with 17 069 578 bytes of data, having 3 538 151 words, of which 2 293 709 were counted as words to include in the frequency count, while 1 244 442 words were ignored. There was 42 words to ignore in the ignore file. The book file has 9 6205 unique words in total.
 
@@ -112,11 +112,11 @@ Should we be happy? Consider threading a good solution, improved the performance
 
 When implementing the threaded solution, I happened to stop by to read the documentation at [cppreference.com](https://en.cppreference.com/w/cpp/container/map) says:
 
-> "std::map is a sorted associative container that contains key-value pairs with unique keys. Keys are sorted by using the comparison function Compare."
+> "std::map is a sorted associative container that contains key-value pairs with unique keys. **Keys are sorted** by using the comparison function Compare."
 
-Note the part "...keys are sorted...". When adding the unique words to the map, the dictionary is sorted after each add. **That takes time**. Since we are not even interested about the words being in order, this is unnecessary. Can we avoid this? 
+Note the part "...keys are sorted..." (emphasis mine). When adding the unique words to the map, the dictionary is sorted after each word is added to the dictionary. **That takes time**. Since we are not even interested about the words being in order, this is unnecessary. Can we avoid this? Does this have a significant impact on the time performance? 
 
-Fortunately, there is a dictionary in `std` that does not sort. Let's test how `std::unordered_map` performs against `std::map`. More information on unordered map in [cppreference.com](https://en.cppreference.com/w/cpp/container/unordered_map).
+Fortunately, there is a dictionary in `std` that does not sort. Let's test how `std::unordered_map` performs against `std::map`. More information on unordered map at [cppreference.com](https://en.cppreference.com/w/cpp/container/unordered_map).
 
 The code already contains both maps, the other one commented out. Try out both versions to verify, commenting the other. My tests with both maps gave the following results:
 
@@ -127,13 +127,17 @@ The code already contains both maps, the other one commented out. Try out both v
 | multi-threaded map            |                   491 :|
 | multi-threaded unordered map  |                   434 :|
 
-Based on these tests, implementing multi-threaded `std::map` version to boost time performance was a wasted effort! Single-threaded unordered map was *faster* than threaded map implementation. Just taking away the sorting to keep the keys (unique words in the book) in order made the unordered map version faster.
+Based on these tests, implementing multi-threaded `std::map` version to boost time performance was a wasted effort! Single-threaded unordered map was *faster* than threaded map implementation. Just taking away the unnecessary sorting to keep the keys (unique words in the book) in order made the unordered map version faster.
 
 You can also see that combining both threading and unordered maps does not provide any time performance advantage, being only 12 ms faster than the single-threaded version.
 
 ## Conclusion
 
-Mind the map. Know the available data structures. Consider the needs of the task and pick the data structure fulfilling the needs. In this case `std::unordered_map` is more suitable solution than using the more familiar and easier to type `std::map`. Using a fast data structure may save you from complicated threaded code that you may not even need to implement. 
+What to learn from this?
+
+Mind the map. Know the available data structures. Read the documentation.
+
+Consider the needs of the task and pick the data structure fulfilling the needs, *without unnecessary work being done*. In this case `std::unordered_map` is more suitable solution than using the more familiar and easier to type `std::map`. Using a fast data structure may save you from complicated threaded code that you may not even need to implement.
 
 ## About
 

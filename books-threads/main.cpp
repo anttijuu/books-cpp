@@ -50,9 +50,10 @@ typedef struct thread_struct_t {
 	// Constant reference to the words to ignore, read from the ignore file.
 	const std::vector<std::wstring> & toIgnore;
 	// The results of one thread: the word - word count pairs for unique words
-	// in the array slice processed by one thread.
-	std::unordered_map<std::wstring,int> wordCounts;
-	// std::map<std::wstring,int> wordCounts;
+	// in the array slice processed by one thread. Try both map and unordered_map
+	// to see time performance differences, if any.
+	// std::unordered_map<std::wstring,int> wordCounts;
+	std::map<std::wstring,int> wordCounts;
 } thread_struct;
 
 // The thread function, processing a slice of the all words read from the book file.
@@ -92,9 +93,10 @@ int main(int argc, const char * argv[]) {
 	// Start measuring time.
 	std::chrono::system_clock::time_point started = std::chrono::system_clock::now();
 
-	// This map will contain the unique words with counts
-	std::unordered_map<std::wstring, int> wordCounts;
-	// std::map<std::wstring, int> wordCounts;
+	// This map will contain the unique words with counts. Try both map and unordered_map
+	// to see time performance differences, if any.
+	// std::unordered_map<std::wstring, int> wordCounts;
+	std::map<std::wstring, int> wordCounts;
 
 	// This array contains the words to ignore
 	std::vector<std::wstring> wordsToIgnore;
