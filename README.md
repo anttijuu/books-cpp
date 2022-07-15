@@ -99,10 +99,10 @@ Test file was a book file with 17 069 578 bytes of data, having 3 538 151 word
 
 The table below shows typical execution times.
 
-| Implementation     | Time performance (ms) :|
-|--------------------|------------------------|
-| single-threaded map|                   665 :|
-| multi-threaded map |                   491 :|
+| Implementation     | Time performance (ms)  |
+|--------------------|-----------------------:|
+| single-threaded map|                   665  |
+| multi-threaded map |                   491  |
 
 Using threads leads to an execution time 74% of the single threaded implementation. An expected and understandable improvement.
 
@@ -120,12 +120,12 @@ Fortunately, there is a dictionary in `std` that does not sort. Let's test how `
 
 The code already contains both maps, the other one commented out. Try out both versions to verify, commenting the other. My tests with both maps gave the following results:
 
-| Implementation                | Time performance (ms) :|
-|-------------------------------|------------------------|
-| single-threaded map           |                   665 :|
-| single-threaded unordered map |                   446 :|
-| multi-threaded map            |                   491 :|
-| multi-threaded unordered map  |                   434 :|
+| Implementation                | Time performance (ms) |
+|-------------------------------|----------------------:|
+| single-threaded map           |                   665 |
+| single-threaded unordered map |                   446 |
+| multi-threaded map            |                   491 |
+| multi-threaded unordered map  |                   434 |
 
 Based on these tests, implementing multi-threaded `std::map` version to boost time performance was a wasted effort! Single-threaded unordered map was *faster* than threaded map implementation. Just taking away the unnecessary sorting to keep the keys (unique words in the book) in order made the unordered map version faster.
 
