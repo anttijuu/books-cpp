@@ -51,6 +51,7 @@ typedef struct thread_struct_t {
 	const std::vector<std::wstring> & toIgnore;
 	// The results of one thread: the word - word count pairs for unique words
 	// in the array slice processed by one thread.
+	// std::unordered_map<std::wstring,int> wordCounts;
 	std::map<std::wstring,int> wordCounts;
 } thread_struct;
 
@@ -92,6 +93,7 @@ int main(int argc, const char * argv[]) {
 	std::chrono::system_clock::time_point started = std::chrono::system_clock::now();
 
 	// This map will contain the unique words with counts
+	// std::unordered_map<std::wstring, int> wordCounts;
 	std::map<std::wstring, int> wordCounts;
 
 	// This array contains the words to ignore
