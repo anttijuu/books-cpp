@@ -52,13 +52,14 @@ typedef struct thread_struct_t {
 	// The results of one thread: the word - word count pairs for unique words
 	// in the array slice processed by one thread. Try both map and unordered_map
 	// to see time performance differences, if any.
-	// std::unordered_map<std::wstring,int> wordCounts;
-	std::map<std::wstring,int> wordCounts;
+	std::unordered_map<std::wstring,int> wordCounts;
+	// std::map<std::wstring,int> wordCounts;
 } thread_struct;
 
 // The thread function, processing a slice of the all words read from the book file.
 void run(thread_struct & threadData) {
 	// For each word read from the book in this array slice...
+	std::cout << "Starting thread " << std::this_thread::get_id() << std::endl;
 	for (long index = threadData.startIndex; index <= threadData.endIndex; index++) {
 		// Look up the word.
 		const std::wstring & word = threadData.rawWords[index];
@@ -74,6 +75,7 @@ void run(thread_struct & threadData) {
 			threadData.ignoredWordCount++;
 		}
 	}
+	std::cout << "Ending thread " << std::this_thread::get_id() << std::endl;
 }
 
 
@@ -95,8 +97,8 @@ int main(int argc, const char * argv[]) {
 
 	// This map will contain the unique words with counts. Try both map and unordered_map
 	// to see time performance differences, if any.
-	// std::unordered_map<std::wstring, int> wordCounts;
-	std::map<std::wstring, int> wordCounts;
+	std::unordered_map<std::wstring, int> wordCounts;
+	// std::map<std::wstring, int> wordCounts;
 
 	// This array contains the words to ignore
 	std::vector<std::wstring> wordsToIgnore;
