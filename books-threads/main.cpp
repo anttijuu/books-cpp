@@ -59,7 +59,7 @@ typedef struct thread_struct_t {
 // The thread function, processing a slice of the all words read from the book file.
 void run(thread_struct & threadData) {
 	// For each word read from the book in this array slice...
-	std::cout << "Starting thread " << std::this_thread::get_id() << std::endl;
+	// std::cout << "Starting thread " << std::this_thread::get_id() << std::endl;
 	for (long index = threadData.startIndex; index <= threadData.endIndex; index++) {
 		// Look up the word.
 		const std::wstring & word = threadData.rawWords[index];
@@ -75,7 +75,7 @@ void run(thread_struct & threadData) {
 			threadData.ignoredWordCount++;
 		}
 	}
-	std::cout << "Ending thread " << std::this_thread::get_id() << std::endl;
+	// std::cout << "Ending thread " << std::this_thread::get_id() << std::endl;
 }
 
 
