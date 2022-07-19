@@ -149,12 +149,12 @@ I tested the single and multithreaded implementations (with four and eight threa
 
 | Words in file	| Single-threaded	| Multi-threaded (4)	| Multi-threaded (8)	| 8 / single thread  |
 |----------------:|----------------:|-------------------:|-------------------:|-------------------:|
-|   3 538 151     |             454 |                452 |                442 |               97% :|
-|   7 690 452     |             843 |                814 |                799 |               95% :|
-|  15 380 904     |            1678 |               1611 |               1561 |               93% :|
-|  30 761 808     |            3349 |               3176 |               3123 |               93% :|
-|  61 523 616     |            6712 |               6312 |               6138 |               91% :|
-| 123 047 232     |           13382 |              12529 |              12106 |               90% :|
+|   3 538 151     |             454 |                452 |                442 |               97%  |
+|   7 690 452     |             843 |                814 |                799 |               95%  |
+|  15 380 904     |            1678 |               1611 |               1561 |               93%  |
+|  30 761 808     |            3349 |               3176 |               3123 |               93%  |
+|  61 523 616     |            6712 |               6312 |               6138 |               91%  |
+| 123 047 232     |           13382 |              12529 |              12106 |               90%  |
 
 You can see that as the file size grows, the multithreaded version gets faster compared to the single threaded one. The last file which is 32 times larger than the original one, with 521MB of data, is handled 90% of the execution time with eight threads, compared to single-threaded version. Advantage is then 1.276 seconds.
 
