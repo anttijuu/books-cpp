@@ -139,6 +139,38 @@ Mind the map. Know the available data structures. Read the documentation.
 
 Consider the needs of the task and pick the data structure fulfilling the needs, *without unnecessary work being done*. In this case `std::unordered_map` is more suitable solution than using the more familiar and easier to type `std::map`. Using a fast data structure may save you from complicated threaded code that you may not even need to implement.
 
+## Addendum
+
+So why the multithreaded version is not faster? And do both of the solutions **scale** when n (number of words in a book file) grows?
+
+I tested this. The first line in the table below is the test file `Bulk.txt` used above. The other files are that test file concatenated again and again, always doubling the file size from the previous one.
+
+I tested the single and multithreaded implementations (with four and eight threads) to see how they compare.
+
+| Words in file	| Single-threaded	| Multi-threaded (4)	| Multi-threaded (8)	| 8 / single thread  |
+|----------------:|----------------:|-------------------:|-------------------:|-------------------:|
+|   3 538 151     |             454 |                452 |                442 |               97% :|
+|   7 690 452     |             843 |                814 |                799 |               95% :|
+|  15 380 904     |            1678 |               1611 |               1561 |               93% :|
+|  30 761 808     |            3349 |               3176 |               3123 |               93% :|
+|  61 523 616     |            6712 |               6312 |               6138 |               91% :|
+| 123 047 232     |           13382 |              12529 |              12106 |               90% :|
+
+You can see that as the file size grows, the multithreaded version gets faster compared to the single threaded one. The last file which is 32 times larger than the original one, with 521MB of data, is handled 90% of the execution time with eight threads, compared to single-threaded version. Advantage is then 1.276 seconds.
+
+![Graph of the comparisons](comparisons.png)
+
+The reason for the relatively small advantage of the threads is, as usual, **the I/O**. When measuring the phases of the multithreaded version you can see this clearly:
+
+```console
+Files read in          10278 ms.
+Threads executed in     1715 ms.
+Results merged in        100 ms.
+Multimapped in            11 ms.
+```
+
+Most of the time is spent in reading the book files in memory. The advantage of the threads appear when the amount of data grows to be releatively significant.
+
 ## About
 
 * &copy; Antti Juustila, 2022
