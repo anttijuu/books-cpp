@@ -169,7 +169,7 @@ Results merged in        100 ms.
 Multimapped in            11 ms.
 ```
 
-Most of the time is spent in reading the book files in memory. The advantage of the threads appear when the amount of data grows to be releatively significant.
+Most of the time is spent in reading the book files in memory. The advantage of the threads appear when the amount of data grows to be relatively significant.
 
 ## About
 
