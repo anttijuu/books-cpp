@@ -171,7 +171,7 @@ int main(int argc, const char * argv[]) {
 	}
 
 	std::chrono::system_clock::time_point threadExecuted = std::chrono::system_clock::now();
-	std::chrono::milliseconds timeValue2 = std::chrono::duration_cast<std::chrono::milliseconds>(threadExecuted-started);
+	std::chrono::milliseconds timeValue2 = std::chrono::duration_cast<std::chrono::milliseconds>(threadExecuted-readFiles);
 	std::wcout << L"Threads executed in     " << timeValue2.count() << L" ms." << std::endl;
 
 	// Merge thread results from the thread structs to wordCount and total counters.
@@ -191,7 +191,7 @@ int main(int argc, const char * argv[]) {
 	}
 
 	std::chrono::system_clock::time_point resultsMerged = std::chrono::system_clock::now();
-	std::chrono::milliseconds timeValue3 = std::chrono::duration_cast<std::chrono::milliseconds>(resultsMerged-started);
+	std::chrono::milliseconds timeValue3 = std::chrono::duration_cast<std::chrono::milliseconds>(resultsMerged-threadExecuted);
 	std::wcout << L"Results merged in     " << timeValue3.count() << L" ms." << std::endl;
 
 	// Move words & counts to multimap reversed so that it can be sorted by value (count) with operator >
@@ -203,7 +203,7 @@ int main(int argc, const char * argv[]) {
 	});
 
 	std::chrono::system_clock::time_point multiMapped = std::chrono::system_clock::now();
-	std::chrono::milliseconds timeValue5 = std::chrono::duration_cast<std::chrono::milliseconds>(multiMapped-started);
+	std::chrono::milliseconds timeValue5 = std::chrono::duration_cast<std::chrono::milliseconds>(multiMapped-resultsMerged);
 	std::wcout << L"Multimapped in     " << timeValue5.count() << L" ms." << std::endl;
 
 	// Print the results of top words with counts.
