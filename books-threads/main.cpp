@@ -137,6 +137,11 @@ int main(int argc, const char * argv[]) {
 	}
 	bookFile.close();
 
+	std::chrono::system_clock::time_point readFiles = std::chrono::system_clock::now();
+	std::chrono::milliseconds timeValue = std::chrono::duration_cast<std::chrono::milliseconds>(readFiles-started);
+	std::wcout << L"Files read in     " << timeValue.count() << L" ms." << std::endl;
+
+
 	// Prepare the threads, eight of them (assuming eight cores in the computer).
 	enum { NUMBER_OF_THREADS = 8 };
 	long sliceSize = wordArray.size() / NUMBER_OF_THREADS;
@@ -165,6 +170,10 @@ int main(int argc, const char * argv[]) {
 		threads[counter].join();
 	}
 
+	std::chrono::system_clock::time_point threadExecuted = std::chrono::system_clock::now();
+	std::chrono::milliseconds timeValue2 = std::chrono::duration_cast<std::chrono::milliseconds>(threadExecuted-started);
+	std::wcout << L"Threads executed in     " << timeValue2.count() << L" ms." << std::endl;
+
 	// Merge thread results from the thread structs to wordCount and total counters.
 	long countedWordsTotal = 0;
 	long ignoredWordsTotal = 0;
@@ -181,6 +190,10 @@ int main(int argc, const char * argv[]) {
 		delete threadStructs[counter];
 	}
 
+	std::chrono::system_clock::time_point resultsMerged = std::chrono::system_clock::now();
+	std::chrono::milliseconds timeValue3 = std::chrono::duration_cast<std::chrono::milliseconds>(resultsMerged-started);
+	std::wcout << L"Results merged in     " << timeValue3.count() << L" ms." << std::endl;
+
 	// Move words & counts to multimap reversed so that it can be sorted by value (count) with operator >
 	// Multimap needed since several words can have same count -- which will be the key in the new multimap.
 	std::multimap<int, std::wstring, std::greater<int>> result;
@@ -188,6 +201,10 @@ int main(int argc, const char * argv[]) {
 						[](auto const& p) {
 		return std::make_pair(p.second, p.first);
 	});
+
+	std::chrono::system_clock::time_point multiMapped = std::chrono::system_clock::now();
+	std::chrono::milliseconds timeValue5 = std::chrono::duration_cast<std::chrono::milliseconds>(multiMapped-started);
+	std::wcout << L"Multimapped in     " << timeValue5.count() << L" ms." << std::endl;
 
 	// Print the results of top words with counts.
 	int counter = 0;
@@ -200,8 +217,8 @@ int main(int argc, const char * argv[]) {
 
 	// Stop measuring time and print out the time performance.
 	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-	std::chrono::milliseconds timeValue = std::chrono::duration_cast<std::chrono::milliseconds>(now-started);
-	std::wcout << L"Processed the book in     " << timeValue.count() << L" ms." << std::endl;
+	std::chrono::milliseconds timeValue4 = std::chrono::duration_cast<std::chrono::milliseconds>(now-started);
+	std::wcout << L"Processed the book in     " << timeValue4.count() << L" ms." << std::endl;
 	std::wcout << L"Words in book file:       " << wordArray.size() << std::endl;
 	std::wcout << L"Counted words in total:   " << countedWordsTotal << std::endl;
 	std::wcout << L"Words to ignore:          " << wordsToIgnore.size() << std::endl;
